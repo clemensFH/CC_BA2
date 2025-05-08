@@ -14,11 +14,21 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
     conn, addr = server.accept()
     with conn:
         print(f"Verbindung von {addr}")
-
+        
+        content = b""
         while True:
-            data = conn.recv(4096)
+            data = conn.recv(808)
             if not data:
                 break
+            
             print(f"[{addr}] Empfangene Daten (hex): {data.hex()}")
             mqtt_packet = MQTT(data)
             mqtt_packet.show()
+            print("Packet Type: " + str(mqtt_packet.type))
+            
+            tmp = b""
+            if mqtt_packet == 3: # Publish
+                tmp += mqtt_packet.topic
+                tmp += mqtt_packet.value
+                print("Reassembled: " + tmp.hex())
+

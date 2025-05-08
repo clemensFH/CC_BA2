@@ -9,11 +9,19 @@ print(data + " len: " + str(len(data)))
 
 byte_data = bytes.fromhex(data)
 
-packet = CoAP.CoAP(code=1, msg_id=56, token=byte_data[:15])
-#packet.options = [('Uri-Path', byte_data[15:])]
-packet.options = [('Uri-Path', byte_data[15:20]), ('Uri-Path', byte_data[20:])]
+# token max => 15
+# Max-Age => 4
+# ETag => 8
+GET_packet = CoAP.CoAP(code=1, msg_id=56, token=byte_data[:15])
+GET_packet.options = [('Uri-Path', byte_data[15:20]), ('Max-Age', byte_data[20:24]), ("ETag", byte_data[14:22])]
 
-s = IP(dst="10.0.0.12") / UDP(dport=5683) / packet
+
+POST_packet = CoAP.CoAP(code=2, msg_id=99, token=byte_data[:15], paymark=byte_data[15:16])
+POST_packet.options = [('Uri-Path', byte_data[15:20])]
+POST_packet.paymark = b'\xFF'
+POST_packet /= byte_data[24:]
+
+s = IP(dst="10.0.0.12") / UDP(dport=5683) / POST_packet
 print(s.summary())
 print(s.token)
 send(s)

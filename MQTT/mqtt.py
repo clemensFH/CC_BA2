@@ -12,10 +12,10 @@ byte_data = bytes.fromhex(data)
 
 p = mqtt.MQTT()/mqtt.MQTTConnect(clientId=byte_data[:5],
                                  willflag=1, usernameflag=1, passwordflag=1,
-                                 willtopic=byte_data[:5], willmsg=byte_data[:5],
-                                 username=byte_data[:5], password=byte_data[0:5],
+                                 willtopic=byte_data[5:10], willmsg=byte_data[10:15],
+                                 username=byte_data[15:20], password=byte_data[20:25],
                                  protoname='MQTT', cleansess=1, klive=60, protolevel=6)
-a = mqtt.MQTT(QOS=1)/mqtt.MQTTPublish(msgid=1, topic=byte_data[:5], value=byte_data[5:10])
+a = mqtt.MQTT(QOS=1)/mqtt.MQTTPublish(msgid=1, topic=byte_data[0:14], value=byte_data[14:])
 
 # TCP-Verbindung aufbauen
 """ip = IP(dst="10.0.0.12")
