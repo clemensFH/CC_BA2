@@ -1,4 +1,5 @@
 from cbor2 import dumps
+import socket
 import scapy.contrib.mqtt as mqtt
 from scapy.all import IP, TCP, RandShort, send, sr1, load_contrib
 
@@ -17,12 +18,19 @@ p = mqtt.MQTT()/mqtt.MQTTConnect(clientId=byte_data[:5],
 a = mqtt.MQTT(QOS=1)/mqtt.MQTTPublish(msgid=1, topic=byte_data[:5], value=byte_data[5:10])
 
 # TCP-Verbindung aufbauen
-ip = IP(dst="10.0.0.12")
+"""ip = IP(dst="10.0.0.12")
 sport = RandShort()
 tcp_syn = TCP(sport=sport, dport=1883, flags="S", seq=1000)
-synack = sr1(ip / tcp_syn, timeout=2)
+synack = sr1(ip / tcp_syn, timeout=2)"""
 
-""" """
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    s.connect(("10.0.0.12", 1883))
+    s.sendall(bytes(p))
+    print("MQTT CONNECT gesendet")
+    s.sendall(bytes(a))
+    print("MQTT PUBLISH gesendet")
+
+"""
 if synack and synack.haslayer(TCP):
     seq = tcp_syn.seq + 1
     ack = synack.seq + 1
@@ -36,8 +44,4 @@ if synack and synack.haslayer(TCP):
     # MQTT CONNECT senden
     tcp_push = TCP(sport=sport, dport=1883, flags="PA", seq=seq, ack=ack)
     send(ip / tcp_push / a)
-    print(p.summary())
-
-#s = IP(dst="10.0.0.11") / TCP(dport=1883) / a
-#print(s.summary())
-#send(s)
+    print(p.summary())"""
