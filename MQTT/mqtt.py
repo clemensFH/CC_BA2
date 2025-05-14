@@ -25,7 +25,7 @@ synack = sr1(ip / tcp_syn, timeout=2)"""
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect(("10.0.0.12", 1883))
-    s.sendall(bytes(p))
+    s.sendall(bytes(p)) #send ?
     print("MQTT CONNECT gesendet")
     s.sendall(bytes(a))
     print("MQTT PUBLISH gesendet")

@@ -13,15 +13,16 @@ byte_data = bytes.fromhex(data)
 # Max-Age => 4
 # ETag => 8
 GET_packet = CoAP.CoAP(code=1, msg_id=56, token=byte_data[:15])
-GET_packet.options = [('Uri-Path', byte_data[15:20]), ('Max-Age', byte_data[20:24]), ("ETag", byte_data[14:22])]
+GET_packet.options = [("ETag", byte_data[15:19]), ('Uri-Path', byte_data[19:24]), ('Max-Age', byte_data[24:])]
 
 
-POST_packet = CoAP.CoAP(code=2, msg_id=99, token=byte_data[:15], paymark=byte_data[15:16])
+POST_packet = CoAP.CoAP(code=2, msg_id=99, token=byte_data[:15], paymark=b'\xFF')
 POST_packet.options = [('Uri-Path', byte_data[15:20])]
-POST_packet.paymark = b'\xFF'
-POST_packet /= byte_data[24:]
+POST_packet /= byte_data[20:]
 
-s = IP(dst="10.0.0.12") / UDP(dport=5683) / POST_packet
-print(s.summary())
-print(s.token)
-send(s)
+get = IP(dst="10.0.0.12") / UDP(dport=5683) / GET_packet
+post = IP(dst="10.0.0.12") / UDP(dport=5683) / POST_packet
+print(get.summary())
+print(post.token)
+send(get)
+send(post)
