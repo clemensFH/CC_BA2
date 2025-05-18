@@ -1,12 +1,22 @@
-from cbor2 import dumps
+from cbor2 import dumps, loads
 import socket
 import scapy.contrib.mqtt as mqtt
 from scapy.all import IP, TCP, RandShort, send, sr1, load_contrib
+import time
+from util.cborctl import CBORIterator, readFromFile
+from hashlib import sha256
 
 
 daten = {"name": "Clemens", "wert": 42, "aktiv": 2}
 data = dumps(daten).hex()
-print(data + " len: " + str(len(data)))
+#print(data + " len: " + str(len(data)))
+
+content = readFromFile("data_1mb.json")    # bytes von CBOR speichern
+print(type(content))
+print(len(content))
+print(sha256(content).hexdigest())
+#print(loads(content))
+crwaler =  CBORIterator(content)
 
 byte_data = bytes.fromhex(data)
 
@@ -17,31 +27,28 @@ p = mqtt.MQTT()/mqtt.MQTTConnect(clientId=byte_data[:5],
                                  protoname='MQTT', cleansess=1, klive=60, protolevel=6)
 a = mqtt.MQTT(QOS=1)/mqtt.MQTTPublish(msgid=1, topic=byte_data[0:14], value=byte_data[14:])
 
-# TCP-Verbindung aufbauen
-"""ip = IP(dst="10.0.0.12")
-sport = RandShort()
-tcp_syn = TCP(sport=sport, dport=1883, flags="S", seq=1000)
-synack = sr1(ip / tcp_syn, timeout=2)"""
+"""test = mqtt.MQTT()/mqtt.MQTTConnect(clientId=crwaler.getNextBytes(5),
+                                 willflag=1, usernameflag=1, passwordflag=1,
+                                 willtopic=crwaler.getNextBytes(5), willmsg=crwaler.getNextBytes(5),
+                                 username=crwaler.getNextBytes(5), password=crwaler.getNextBytes(5),
+                                 protoname='MQTT', cleansess=1, klive=60, protolevel=6)"""
+test = mqtt.MQTT(QOS=1)/mqtt.MQTTPublish(msgid=1, topic=content[:14], value=content[14:])
+
+#print(test.password)
+
+# Socket TCP-Verbindung aufbauen
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.connect(("10.0.0.12", 1883))
-    s.sendall(bytes(p)) #send ?
-    print("MQTT CONNECT gesendet")
-    s.sendall(bytes(a))
-    print("MQTT PUBLISH gesendet")
-
-"""
-if synack and synack.haslayer(TCP):
-    seq = tcp_syn.seq + 1
-    ack = synack.seq + 1
-    tcp_ack = TCP(sport=sport, dport=1883, flags="A", seq=seq, ack=ack)
-    send(ip / tcp_ack)
-
-    tcp_push = TCP(sport=sport, dport=1883, flags="PA", seq=seq, ack=ack)
-    send(ip / tcp_push / p)
-    print(p.summary())
-
-    # MQTT CONNECT senden
-    tcp_push = TCP(sport=sport, dport=1883, flags="PA", seq=seq, ack=ack)
-    send(ip / tcp_push / a)
-    print(p.summary())"""
+    s.connect(("10.0.0.12", 1883))  # Verbinden
+    s.send(bytes(test))
+    #s.send(bytes(p)) #send ?
+    #print("MQTT CONNECT gesendet")
+    #s.send(bytes(a))
+    #time.sleep(3)
+    #print("MQTT PUBLISH gesendet")
+    #s.send(bytes(a))
+    #time.sleep(3)
+    #print("MQTT PUBLISH gesendet")
+    #s.send(bytes(a))
+    #time.sleep(3)
+    #print("MQTT PUBLISH gesendet")
