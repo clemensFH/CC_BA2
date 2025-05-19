@@ -1,6 +1,9 @@
 import slixmpp
 import asyncio
 import logging
+import socket
+from util.cborctl import CBORIterator, readFromFile
+from hashlib import sha256
 logging.basicConfig(level=logging.DEBUG)
 
 class SendMsgBot(slixmpp.ClientXMPP):
@@ -31,7 +34,7 @@ jid = "max@fhcampus.com"
 password = "max"
 recipient = "sepp@fhcampus.com"
 message = "Hallo vom Slixmpp-Bot!"
-
+"""
 xmpp = SendMsgBot(jid, password, recipient, message)
 xmpp.enable_starttls = False
 xmpp.enable_direct_tls = False
@@ -40,21 +43,25 @@ print("pre connect")
 #xmpp.connect(("fhcampus.com", 5222), use_ssl=False, force_starttls=False, disable_starttls=True)
 #xmpp.connect("fhcamus.com", 5222)
 print("after connect")
-#asyncio.get_event_loop().run_until_complete(xmpp.disconnected)
+#asyncio.get_event_loop().run_until_complete(xmpp.disconnected)"""
 
-import socket
+content = readFromFile("data_1mb.json")    # bytes von CBOR speichern
+print(type(content))
+print(len(content))
+print(sha256(content).hexdigest())
 
-xml_payload = """
+mess = """
 <message
        from='juliet@example.com/balcony'
        id='ktx72v49'
        to='romeo@example.net'
        type='chat'
        xml:lang='en'>
-     <body>Art thou not Romeo, and a Montague?</body>
+     <head>HI</head>
+     <body>""" + content.hex() + """</body>
    </message>
 """
-
+print(str(content[:5]) + " " + str(content[-5:]))
 pres = """
 <presence from='juliet@example.com'
                  id='ign291v5'
@@ -63,5 +70,5 @@ pres = """
 """
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.connect(("10.0.0.12", 5222))
-    s.sendall(pres.encode("utf-8"))
+    s.connect(("10.0.0.14", 5222))
+    s.sendall(mess.encode("utf-8"))
