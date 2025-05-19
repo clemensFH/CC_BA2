@@ -39,8 +39,13 @@ class CBORIterator():
         self.idx+=n
         return ns
     
+    def getRemainingBytes(self):
+        data = self.content[self.idx + 1:]
+        self.idx = self.length - 1
+        return data
+    
     def ReachedEnd(self):
         return self.idx == self.length - 1
     
-    def getRemainingBytes(self):
+    def getRemainingLength(self):
         return self.length - 1 - self.idx
