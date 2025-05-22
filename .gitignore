@@ -4,3 +4,5 @@ MQTT/__pycache__/mqtt.cpython-311.pyc
 MQTT/__pycache__/__init__.cpython-311.pyc
 .gitignore
 CoAP/__pycache__/coap.cpython-311.pyc
+XMPP/__pycache__/xmpp.cpython-311.pyc
+.gitignore

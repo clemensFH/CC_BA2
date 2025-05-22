@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import socket
 from scapy.contrib.coap import CoAP
 from hashlib import sha256
@@ -10,30 +12,28 @@ PORT = 5683           # MQTT-Standardport
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server:
     server.bind((HOST, PORT))
     print(f"CoAP-UDP-Server läuft auf Port {PORT}...")
-
-    content = b""
-    packet_counter = 0
-    
+    tmp = b""
+    i = 0
     while True:
         data, addr = server.recvfrom(4096)
-        #print(f"Empfangen von {addr}: {data.hex()} (Länge: {len(data)} Bytes)")
 
         coap = CoAP(data)  # 'data' stammt aus recvfrom
-        #coap.show()
-        packet_counter += 1
-        print(str(packet_counter))
+        i += 1
+        print(str(i))
 
-        if coap.code == 1:  # GET packet
-            content += coap.token
+#        if coap.code == 2:
+#            tmp += coap.token
+#            tmp += coap.options[0][1]
+#            tmp += coap.load
+#            print("Reassembled: " + tmp.hex())
+        if coap.code == 1:
+            tmp += coap.token
             for opt in coap.options:
-                content += opt[1]
-        elif coap.code == 2:# POST packet
-            content += coap.token
-            content += coap.option[0][1] # custom options!!!
-            content += coap.load
+                tmp += opt[1]
         else:
-            print("Falscher Packettyp!")
-
-        hsh = sha256(content).hexdigest()
-        if hsh == "0877035e06eb8aee6ab41d118a3bb7a15ebf5c6adc346925143557c98b20efe8":
-            print("Packet Nr: " + str(packet_counter) + " Hash OK: " + hsh)
+            print("Falscher Type")
+        hsh = sha256(tmp).hexdigest()
+        print(hsh)
+        if hsh == "56939f07f300cd31e9c462f5893b1abb50bf5e79d100806e41ea47a3093a01db":
+            print("Packet Nr: " + str(i) + " Hash OK")
+            break

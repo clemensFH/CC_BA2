@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import socket
 from scapy.contrib.mqtt import MQTT
 from hashlib import sha256
@@ -5,36 +7,46 @@ from hashlib import sha256
 # Server-Konfiguration
 HOST = '0.0.0.0'      # Lauscht auf allen Interfaces
 PORT = 1883           # MQTT-Standardport
+PSIZE = 1460
 
 # TCP-Socket einrichten
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
-    server.bind((HOST, PORT))   # Socket auf IP und Port setzen
-    server.listen(5)            # Max Anzahl Verbindingen
+    server.bind((HOST, PORT))
+    server.listen(1)
     print(f"MQTT-TCP-Server läuft auf Port {PORT}...")
 
-    conn, addr = server.accept() # Auf Verbindung warten | conn -> client socket, addr -> client adress + port
-    with conn:                  # Solange Verbindung besteht
+    conn, addr = server.accept()
+    with conn:
         print(f"Verbindung von {addr}")
-        
         content = b""
+        packet_counter = 0
         while True:
-            data = conn.recv(1024)   # empfange MAX bytes
+            data = conn.recv(1024)
             if not data:
                 break
             content += data
-            print(f"[{addr}] Empfangene Daten (hex): {data.hex()}")
-            
-            """mqtt_packet = MQTT(data)
-            mqtt_packet.show()
-            print("Packet Type: " + str(mqtt_packet.type))
-            
-            tmp = b""
-            if mqtt_packet == 3: # Publish
-                tmp += mqtt_packet.topic
-                tmp += mqtt_packet.value
-                print("Reassembled: " + tmp.hex())"""
-        x = MQTT(content)
-        x.show()
-        payload = x.topic + x.value
-        print(sha256(payload).hexdigest())
 
+            #if mqtt_packet.type == 3:
+            #    tmp += mqtt_packet.topic
+            #    tmp += mqtt_packet.value
+            #    print("Reassembled: " + tmp.hex())
+        length = len(content)
+        idx = 0
+        payload = b""
+        while idx + PSIZE <= length:
+            x = MQTT(content[idx:idx + PSIZE])
+#            x.show()
+            packet_counter += 1
+            payload += x.topic + x.value
+            idx += PSIZE
+
+        print("Länge: " + str(len(content)))
+        if len(content[idx:]) != 0:
+            x = MQTT(content[idx:])
+            print("Rem Length: " + str(len(content[idx:])))
+            x.summary()
+            packet_counter += 1
+            payload += x.topic+x.value
+
+        print("Hex: " + sha256(payload).hexdigest())
+        print("Packet Count: " + str(packet_counter))
