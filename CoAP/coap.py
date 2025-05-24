@@ -5,7 +5,7 @@ import socket
 from util.cborctl import CBORIterator, readFromFile
 from hashlib import sha256
 
-content = readFromFile("data_1mb.json")    # bytes von CBOR speichern
+content = readFromFile("data_10mb.json")    # bytes von CBOR speichern
 print(type(content))
 print(len(content))
 print(sha256(content).hexdigest())
@@ -37,3 +37,4 @@ get = IP(dst="10.0.0.14") / UDP(dport=5683) / x
 send(get)
 packet_counter += 1
 print("Packets sent: " + str(packet_counter))
+print("Size: " + str(len(content)))

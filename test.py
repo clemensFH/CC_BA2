@@ -5,12 +5,13 @@ from cbor2 import dumps
 import util.cborctl as cborctl
 import scapy.contrib.coap as coap
 from scapy.all import IP, UDP, send
+from hashlib import sha256
 
 print("Read target content")
 
-content = cborctl.readFromFile("target_1mb.txt", "output.cbor")
-
-print(content)
+content = cborctl.readFromFile("data_1mb.json")
+print(len(content))
+print(sha256(content).hexdigest())
 
 print("Content read successfull")
 

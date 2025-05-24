@@ -22,7 +22,7 @@ def getMessage(data: bytes):
     return message
 
 
-content = readFromFile("data_1mb.json")    # bytes von CBOR speichern
+content = readFromFile("data_10mb.json")    # bytes von CBOR speichern
 print(type(content))
 print(len(content))
 print(sha256(content).hexdigest())
@@ -39,7 +39,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     while crwaler.getRemainingLength() >= 948: # nicht genau
         packet = getMessage(crwaler.getNextBytes(948))
         output = packet.encode("utf-8")
-        print(len(output))
+        #print(len(output))
         s.send(output)
         packet_counter += 1
     

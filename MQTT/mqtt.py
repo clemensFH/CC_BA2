@@ -7,7 +7,7 @@ from util.cborctl import CBORIterator, readFromFile
 from hashlib import sha256
 
 
-content = readFromFile("data_1mb.json")    # bytes von CBOR speichern
+content = readFromFile("data_10mb.json")    # bytes von CBOR speichern
 print(type(content))
 print(len(content))
 print(sha256(content).hexdigest())
@@ -40,7 +40,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         packet = mqtt.MQTT(QOS=1)/mqtt.MQTTPublish(msgid=5, topic=crwaler.getNextBytes(14), value=crwaler.getNextBytes(1439))
         s.send(bytes(packet))
         packet_counter += 1
-        print(len(packet))
+        #print(len(packet))
     
     packet = mqtt.MQTT(QOS=1)/mqtt.MQTTPublish(msgid=5, topic=crwaler.getNextBytes(14), value=crwaler.getRemainingBytes())
     s.send(bytes(packet))
