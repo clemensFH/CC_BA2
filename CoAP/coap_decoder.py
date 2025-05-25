@@ -25,22 +25,40 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server:
         i += 1
 #        print(str(i))
         payload += data
-        if i == 3151: break
+
+#        if i == 629: break # 631
+#        if i == 3142: break # 3151
+        if i == 6284: break # 6301
 
     length = len(payload)
+    print("i: " + str(i) + " len: " + str(len(payload)))
+
     idx = 0
     packet_counter = 0
     while idx + PSIZE <= length:
         x = CoAP(payload[idx:idx + PSIZE])
-#        x.show()
+        x.show()
         packet_counter += 1
-        tmp += x.topic + x.value
+        tmp += x.msg_id.to_bytes(2, 'big')
+        tmp += x.token
+#        if x.code == 1:
+        for opt in x.options:
+            tmp += opt[1]
+        if x.code == 2:     # Bei Publish Packets
+            tmp += x.load
+
         idx += PSIZE
     
     x = CoAP(payload[idx:])
-#    x.show()
+    x.show()
     packet_counter += 1
-    tmp += x.topic + x.value
+    tmp += x.msg_id.to_bytes(2, 'big')
+    tmp += x.token
+#    if x.code == 1:
+    for opt in x.options:
+        tmp += opt[1]
+    if x.code == 2:     # Bei Publish Packets
+        tmp += x.load
 
     print("Count: " + str(packet_counter))
     print(len(payload))
@@ -57,8 +75,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server:
 #        else:
 #            print("Falscher Type")
     hsh = sha256(tmp).hexdigest()
-#        print(hsh)
+    print(hsh)
     if hsh == "56939f07f300cd31e9c462f5893b1abb50bf5e79d100806e41ea47a3093a01db" or hsh == "0e1609970222da6f2b895886911591a057c70717b201863b9600f0b7ec339de3":
         print("Packet Nr: " + str(i) + " Hash OK")
         #break
-    
+               

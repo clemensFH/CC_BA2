@@ -6,8 +6,9 @@ import time
 from util.cborctl import CBORIterator, readFromFile
 from hashlib import sha256
 
+SEG = False
 
-content = readFromFile("data_10mb.json")    # bytes von CBOR speichern
+content = readFromFile("data_1mb.json")    # bytes von CBOR speichern
 print(type(content))
 print(len(content))
 print(sha256(content).hexdigest())
@@ -36,14 +37,15 @@ packet_counter = 0
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect(("10.0.0.14", 1883))  # Verbinden
 
-    while crwaler.getRemainingLength() >= 1453:
-        packet = mqtt.MQTT(QOS=1)/mqtt.MQTTPublish(msgid=5, topic=crwaler.getNextBytes(14), value=crwaler.getNextBytes(1439))
+    while crwaler.getRemainingLength() >= 1453 and SEG:
+        packet = mqtt.MQTT(QOS=1)/mqtt.MQTTPublish(msgid=int.from_bytes(crwaler.getNextBytes(2), "big"), topic=crwaler.getNextBytes(14), value=crwaler.getNextBytes(1439))
         s.send(bytes(packet))
         packet_counter += 1
         #print(len(packet))
     
-    packet = mqtt.MQTT(QOS=1)/mqtt.MQTTPublish(msgid=5, topic=crwaler.getNextBytes(14), value=crwaler.getRemainingBytes())
+    packet = mqtt.MQTT(QOS=1)/mqtt.MQTTPublish(msgid=int.from_bytes(crwaler.getNextBytes(2), "big"), topic=crwaler.getNextBytes(14), value=crwaler.getRemainingBytes())
     s.send(bytes(packet))
+    packet.show()
     packet_counter += 1
     print(len(packet))
     print("Packets sent: " + str(packet_counter))

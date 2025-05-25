@@ -9,6 +9,7 @@ import base64
 HOST = '0.0.0.0'      # Lauscht auf allen Interfaces
 PORT = 5222           # MQTT-Standardport
 PSIZE = 1457
+SEG = True
 
 # TCP-Socket einrichten
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
@@ -34,7 +35,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         b64payload = ""
         packet_counter = 0
 
-        while idx + PSIZE <= length:
+        while idx + PSIZE <= length and SEG:
             xml_str = content[idx:idx+PSIZE].decode("utf-8")
 #            print(xml_str)
 
@@ -56,13 +57,17 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
 
             except ET.ParseError as e:
                  print("Fehler beim Parsen:", e)
+                 continue
 
         xml_str = content[idx:].decode("utf-8")
         print(xml_str)
-        root=ET.fromstring(xml_str)
-        body=root.find("body")
-        b64payload+=body.text
-        packet_counter += 1
+        try:
+            root=ET.fromstring(xml_str)
+            body=root.find("body")
+            b64payload+=body.text
+            packet_counter += 1
+        except ET.ParseError:
+            print("Fehler beim Parsen.")
 
         payload = base64.b64decode(b64payload)
         print("Packet Counter: " + str(packet_counter))

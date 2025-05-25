@@ -8,6 +8,7 @@ from hashlib import sha256
 HOST = '0.0.0.0'      # Lauscht auf allen Interfaces
 PORT = 1883           # MQTT-Standardport
 PSIZE = 1460
+SEG = True
 
 # TCP-Socket einrichten
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
@@ -33,10 +34,11 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         length = len(content)
         idx = 0
         payload = b""
-        while idx + PSIZE <= length:
+        while idx + PSIZE <= length and SEG:
             x = MQTT(content[idx:idx + PSIZE])
 #            x.show()
             packet_counter += 1
+            payload += x.msgid.to_bytes(2, 'big')
             payload += x.topic + x.value
             idx += PSIZE
 
@@ -46,6 +48,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
             print("Rem Length: " + str(len(content[idx:])))
             x.summary()
             packet_counter += 1
+            payload += x.msgid.to_bytes(2, 'big')
             payload += x.topic+x.value
 
         print("Hex: " + sha256(payload).hexdigest())

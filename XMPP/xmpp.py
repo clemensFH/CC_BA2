@@ -7,6 +7,8 @@ from hashlib import sha256
 import base64
 logging.basicConfig(level=logging.DEBUG)
 
+SEG = False
+
 def getMessage(data: bytes):
     encoded = base64.b64encode(data).decode()
     message = """
@@ -19,15 +21,34 @@ def getMessage(data: bytes):
         <body>""" + encoded + """</body>
     </message>
     """
+    #print(message)
     return message
 
 
-content = readFromFile("data_10mb.json")    # bytes von CBOR speichern
+content = readFromFile("data_5mb.json")    # bytes von CBOR speichern
 print(type(content))
 print(len(content))
 print(sha256(content).hexdigest())
 
+test = """<message
+        from='j'
+        id='k'
+        to='r'
+        type='chat'
+        xml:lang='en'>
+        <body></body>
+    </message>
+    """
+b = test.encode("utf-8")
+print(len(b))
+
 crwaler = CBORIterator(content)
+
+#a = getMessage(crwaler.getNextBytes(0)).encode("UTF-8")
+#b = getMessage(crwaler.getNextBytes(948)).encode("UTF-8")
+
+#print("Len a " + str(len(a)))
+#print("Len b: " + str(len(b)))
 
 # hex     : 632 - Blöcke
 # base 64 : 948 - Blöcke
@@ -36,7 +57,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect(("10.0.0.14", 5222))
     packet_counter = 0
 
-    while crwaler.getRemainingLength() >= 948: # nicht genau
+    while crwaler.getRemainingLength() >= 948 and SEG: # nicht genau
         packet = getMessage(crwaler.getNextBytes(948))
         output = packet.encode("utf-8")
         #print(len(output))

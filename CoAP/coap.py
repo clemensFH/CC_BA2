@@ -21,20 +21,28 @@ POST_packet.options = [('Uri-Path', byte_data[15:20])]
 POST_packet /= byte_data[20:]"""
 
 
-# 0-1464
+# 0-1464 -> nur GET mit ETAG und Uri-Path options !!!
+# normal 1472 -> wegen scapy bug + ETag ption = 1470
 itertor = CBORIterator(content)
 packet_counter = 0
-while itertor.getRemainingLength() >= 1464:
-    x = CoAP.CoAP(code=1, msg_id=12, token=itertor.getNextBytes(15))
-    x.options = [("ETag", itertor.getNextBytes(4)), ("Uri-Path", itertor.getNextBytes(1445))]
+while itertor.getRemainingLength() >= 1470:
+    """x = CoAP.CoAP(code=1, msg_id=packet_counter+1, token=itertor.getNextBytes(15))
+    x.options = [("ETag", itertor.getNextBytes(4)), ("Uri-Path", itertor.getNextBytes(1445))]"""
+    x = CoAP.CoAP(code=2, msg_id=int.from_bytes(itertor.getNextBytes(2), "big"), token=itertor.getNextBytes(15), paymark=b'\xFF')
+    x.options =  [("ETag", itertor.getNextBytes(4))]
+    x /= itertor.getNextBytes(1447)
     get = IP(dst="10.0.0.14") / UDP(dport=5683) / x
     send(get)
     packet_counter += 1
 
-x = CoAP.CoAP(code=1, msg_id=12, token=itertor.getNextBytes(15))
-x.options = [("ETag", itertor.getNextBytes(4)), ("Uri-Path", itertor.getRemainingBytes())]
+"""x = CoAP.CoAP(code=1, msg_id=int.from_bytes(content[:2], "big"), token=itertor.getNextBytes(15))
+x.options = [("ETag", itertor.getNextBytes(4)), ("Uri-Path", itertor.getRemainingBytes())]"""
+x = CoAP.CoAP(code=2, msg_id=int.from_bytes(itertor.getNextBytes(2), "big"), token=itertor.getNextBytes(15), paymark=b'\xFF')
+x.options =  [("ETag", itertor.getNextBytes(4))]
+x /= itertor.getRemainingBytes()
 get = IP(dst="10.0.0.14") / UDP(dport=5683) / x
 send(get)
 packet_counter += 1
+x.show()
 print("Packets sent: " + str(packet_counter))
 print("Size: " + str(len(content)))
