@@ -4,11 +4,12 @@ import socket
 from hashlib import sha256
 import xml.etree.ElementTree as ET
 import base64
+import time
 
 # Server-Konfiguration
 HOST = '0.0.0.0'      # Lauscht auf allen Interfaces
 PORT = 5222           # MQTT-Standardport
-PSIZE = 1457
+PSIZE = 1460
 SEG = True
 
 # TCP-Socket einrichten
@@ -22,10 +23,12 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         print(f"Verbindung von {addr}")
         
         content = b""
+        start_time = -1.0
         while True:
             data = conn.recv(1024)   # empfange MAX bytes
             if not data:
                 break
+            if start_time < 0.0: start_time = time.perf_counter()
             content += data
 
         length = len(content)
@@ -69,6 +72,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         except ET.ParseError:
             print("Fehler beim Parsen.")
 
+        end_time = time.perf_counter()
+
         payload = base64.b64decode(b64payload)
         print("Packet Counter: " + str(packet_counter))
         print("Result Hash: " + sha256(payload).hexdigest())
+        print(f"Duration: {end_time - start_time:.6f} sec")

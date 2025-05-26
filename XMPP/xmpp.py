@@ -7,24 +7,40 @@ from hashlib import sha256
 import base64
 logging.basicConfig(level=logging.DEBUG)
 
-SEG = True
 
 def getMessage(data: bytes):
     encoded = base64.b64encode(data).decode()
-    message = """
+    message = f"""
     <message
         to='example.com'>
-        <body>""" + encoded + """</body>
+        <body>{encoded}</body>
     </message>
     """
     #print(message)
     return message
 
 
-content = readFromFile("data_10mb.json")    # bytes von CBOR speichern
-print(type(content))
-print(len(content))
+def getMessageStr(data: str):
+    message = f"""
+    <message
+        to='example.com'>
+        <body>{data}</body>
+    </message>
+    """
+    #print(message)
+    return message
+
+
+
+SEG = True
+PSIZE = 1379
+
+content = readFromFile("data_1mb.json")    # bytes von CBOR speichern
 print(sha256(content).hexdigest())
+
+b64content = base64.b64encode(content).decode()
+length = len(b64content)
+print(length)
 
 test = """
     <message
@@ -49,15 +65,17 @@ crwaler = CBORIterator(content)
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect(("10.0.0.14", 5222))
     packet_counter = 0
+    idx = 0
 
-    while crwaler.getRemainingLength() >= 1032 and SEG: # nicht genau
-        packet = getMessage(crwaler.getNextBytes(1032))
+    while length - idx >= PSIZE and SEG: # nicht genau
+        packet = getMessageStr(b64content[idx:idx+PSIZE])
         output = packet.encode("utf-8")
         #print(len(output))
         s.send(output)
         packet_counter += 1
+        idx += PSIZE
     
-    packet = getMessage(crwaler.getRemainingBytes())
+    packet = getMessageStr(b64content[idx:])
     print(packet)
     output = packet.encode("utf-8")
     print(len(output))

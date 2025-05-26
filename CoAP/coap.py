@@ -1,7 +1,5 @@
 import scapy.contrib.coap as CoAP
 from scapy.all import send, IP, UDP
-from cbor2 import dumps
-import socket
 from util.cborctl import CBORIterator, readFromFile
 from hashlib import sha256
 

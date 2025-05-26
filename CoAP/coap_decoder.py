@@ -3,6 +3,7 @@
 import socket
 from scapy.contrib.coap import CoAP
 from hashlib import sha256
+import time
 
 # Server-Konfiguration
 HOST = '0.0.0.0'      # Lauscht auf allen Interfaces
@@ -18,11 +19,13 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server:
     tmp = b""
     payload = b""
     i = 0
+    start_time = 0.0
     while True:
         data, addr = server.recvfrom(4096)
-
+        if i == 0: start_time = time.perf_counter()
 #        coap = CoAP(data)  # 'data' stammt aus recvfrom
         i += 1
+
 #        print(str(i))
         payload += data
 
@@ -60,8 +63,10 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server:
     if x.code == 2:     # Bei Publish Packets
         tmp += x.load
 
+    end_time = time.perf_counter()
     print("Count: " + str(packet_counter))
     print(len(payload))
+    print(f"Dauer: {end_time - start_time:.6f} Sekunden")
     
 #        if coap.code == 2:
 #            tmp += coap.token
