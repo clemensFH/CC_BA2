@@ -5,7 +5,7 @@ def readFromFile(filename: str, outputfile = ""):
     with open(f'./data/{filename}', 'r') as fobj:
         content = json.load(fobj)
 
-    print(type(content[0]))
+    #print(type(content[0]))
     output = dumps(content)
     if not outputfile:
         return output

@@ -6,3 +6,4 @@ MQTT/__pycache__/__init__.cpython-311.pyc
 CoAP/__pycache__/coap.cpython-311.pyc
 XMPP/__pycache__/xmpp.cpython-311.pyc
 .gitignore
+util/__pycache__/hashChecker.cpython-311.pyc

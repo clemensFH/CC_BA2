@@ -4,23 +4,35 @@ import socket
 from hashlib import sha256
 import xml.etree.ElementTree as ET
 import base64
-import time
+import time, argparse
+
+
+HASHES = ["56939f07f300cd31e9c462f5893b1abb50bf5e79d100806e41ea47a3093a01db" , "0e1609970222da6f2b895886911591a057c70717b201863b9600f0b7ec339de3", "15408d910a9c5955f17c9ba255f64f972f3f3252737b51a852f513cc4b82f96c"]
 
 # Server-Konfiguration
 HOST = '0.0.0.0'      # Lauscht auf allen Interfaces
 PORT = 5222           # MQTT-Standardport
 PSIZE = 1460
-SEG = True
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-s", "--Segment", action="store_true", help = "Segement packets into Ethernet MTU sizes")
+args = parser.parse_args()
+
+SEG = False
+if args.Segment == True: SEG = True
+info = "ON" if SEG else "OFF"
 
 # TCP-Socket einrichten
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
     server.bind((HOST, PORT))   # Socket auf IP und Port setzen
     server.listen(5)            # Max Anzahl Verbindingen
-    print(f"MQTT-TCP-Server läuft auf Port {PORT}...")
+    print(f"XMPP-Receiver running on port {PORT}...")
+    print(f"with segmenting {info}")
 
     conn, addr = server.accept() # Auf Verbindung warten | conn -> client socket, addr -> client adress + port
     with conn:                  # Solange Verbindung besteht
-        print(f"Verbindung von {addr}")
+        print(f"RECEIVING data from {addr}")
+        print("...")
         
         content = b""
         start_time = -1.0
@@ -32,7 +44,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
             content += data
 
         length = len(content)
-        print("Content Len:" + str(length))
+#        print("Content Len:" + str(length))
         idx = 0
         payload = b""
         b64payload = ""
@@ -63,7 +75,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
                  continue
 
         xml_str = content[idx:].decode("utf-8")
-        print(xml_str)
+        #print(xml_str)
         try:
             root=ET.fromstring(xml_str)
             body=root.find("body")
@@ -73,8 +85,13 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
             print("Fehler beim Parsen.")
 
         end_time = time.perf_counter()
+        print("FINISHED receiving and reassembling data\n")
 
         payload = base64.b64decode(b64payload)
-        print("Packet Counter: " + str(packet_counter))
-        print("Result Hash: " + sha256(payload).hexdigest())
-        print(f"Duration: {end_time - start_time:.6f} sec")
+        hsh = sha256(payload).hexdigest()
+        hshCheck = "OK" if hsh in HASHES else "NOT OK"
+
+        print("Hash            : " + hsh + " " + hshCheck)
+        print("Payload length  : " + str(len(b64payload)))
+        print("Packet Counter  : " + str(packet_counter))
+        print(f"Duration        : {end_time - start_time:.6f} sec")

