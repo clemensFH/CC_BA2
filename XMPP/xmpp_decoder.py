@@ -43,6 +43,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
             if start_time < 0.0: start_time = time.perf_counter()
             content += data
 
+        end_recv = time.perf_counter()
+        print("FINISHED receiving data")
+        print("reassembling payload ...")
         length = len(content)
 #        print("Content Len:" + str(length))
         idx = 0
@@ -85,7 +88,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
             print("Fehler beim Parsen.")
 
         end_time = time.perf_counter()
-        print("FINISHED receiving and reassembling data\n")
+        print("FINISHED reassembling data\n")
 
         payload = base64.b64decode(b64payload)
         hsh = sha256(payload).hexdigest()
@@ -94,4 +97,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         print("Hash            : " + hsh + " " + hshCheck)
         print("Payload length  : " + str(len(b64payload)))
         print("Packet Counter  : " + str(packet_counter))
-        print(f"Duration        : {end_time - start_time:.6f} sec")
+        print(f"Packet reception time  : {end_recv - start_time:.6f} sec")
+        print(f"Reassembling time      : {end_time - end_recv:.6f} sec")
+        print(f"Total                  : {start_time - end_time:.6f} sec")
