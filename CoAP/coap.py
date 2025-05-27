@@ -2,7 +2,7 @@ import scapy.contrib.coap as CoAP
 from scapy.all import send, IP, UDP
 from util.cborctl import CBORIterator, readFromFile
 from hashlib import sha256
-import argparse, ipaddress, sys
+import argparse, ipaddress, sys, socket, time
 
 
 parser = argparse.ArgumentParser()
@@ -36,8 +36,8 @@ print("Length of payload bytestream: " + str(len(content)) + "\n")
 # token max => 15
 # Max-Age => 4
 # ETag => 8
-"""GET_packet = CoAP.CoAP(code=1, msg_id=56, token=byte_data[:15])
-GET_packet.options = [("ETag", byte_data[15:19]), ('Uri-Path', byte_data[19:24]), ('Max-Age', byte_data[24:])]
+"""x = CoAP.CoAP(code=1, msg_id=packet_counter+1, token=itertor.getNextBytes(15))
+    x.options = [("ETag", itertor.getNextBytes(4)), ("Uri-Path", itertor.getNextBytes(1445))]
 
 POST_packet = CoAP.CoAP(code=2, msg_id=99, token=byte_data[:15], paymark=b'\xFF')
 POST_packet.options = [('Uri-Path', byte_data[15:20])]
@@ -49,25 +49,25 @@ POST_packet /= byte_data[20:]"""
 itertor = CBORIterator(content)
 packet_counter = 0
 print("START sending packets")
-
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 while itertor.getRemainingLength() >= PSIZE:
-    """x = CoAP.CoAP(code=1, msg_id=packet_counter+1, token=itertor.getNextBytes(15))
-    x.options = [("ETag", itertor.getNextBytes(4)), ("Uri-Path", itertor.getNextBytes(1445))]"""
     x = CoAP.CoAP(code=2, msg_id=int.from_bytes(itertor.getNextBytes(2), "big"), token=itertor.getNextBytes(15), paymark=b'\xFF')
     x.options =  [("ETag", itertor.getNextBytes(4))]
     x /= itertor.getNextBytes(1447)
-    get = IP(dst=SERVER_IP) / UDP(dport=5683) / x
-    send(get, verbose=False)
+    #get = IP(dst=SERVER_IP) / UDP(dport=5683) / x
+    #send(get, verbose=False)
+    sock.sendto(bytes(x), (SERVER_IP, 5683))
     packet_counter += 1
+    time.sleep(0.001)
 
-"""x = CoAP.CoAP(code=1, msg_id=int.from_bytes(content[:2], "big"), token=itertor.getNextBytes(15))
-x.options = [("ETag", itertor.getNextBytes(4)), ("Uri-Path", itertor.getRemainingBytes())]"""
 x = CoAP.CoAP(code=2, msg_id=int.from_bytes(itertor.getNextBytes(2), "big"), token=itertor.getNextBytes(15), paymark=b'\xFF')
 x.options =  [("ETag", itertor.getNextBytes(4))]
 x /= itertor.getRemainingBytes()
-get = IP(dst=SERVER_IP) / UDP(dport=5683) / x
-send(get, verbose=False)
+#get = IP(dst=SERVER_IP) / UDP(dport=5683) / x
+#send(get, verbose=False)
+sock.sendto(bytes(x), (SERVER_IP, 5683))
 print("FINISHED sending packets")
+sock.close()
 packet_counter += 1
 print("Last packet length: " + str(len(x)))
 print("Last packet:")
