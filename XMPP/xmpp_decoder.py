@@ -99,4 +99,4 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         print("Packet Counter  : " + str(packet_counter))
         print(f"Packet reception time  : {end_recv - start_time:.6f} sec")
         print(f"Reassembling time      : {end_time - end_recv:.6f} sec")
-        print(f"Total                  : {start_time - end_time:.6f} sec")
+        print(f"Total                  : {end_time - start_time:.6f} sec")

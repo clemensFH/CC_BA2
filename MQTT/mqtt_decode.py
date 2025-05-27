@@ -63,7 +63,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         if len(content[idx:]) != 0:
             x = MQTT(content[idx:])
 #            print("Rem Length: " + str(len(content[idx:])))
-            x.summary()
+#            x.summary()
             packet_counter += 1
             payload += x.msgid.to_bytes(2, 'big')
             payload += x.topic+x.value
@@ -79,4 +79,4 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         print("Packet Count    : " + str(packet_counter))
         print(f"Packet reception time  : {end_recv - start_time:.6f} sec")
         print(f"Reassembling time      : {end_time - end_recv:.6f} sec")
-        print(f"Total                  : {start_time - end_time:.6f} sec")
+        print(f"Total                  : {end_time -start_time:.6f} sec")

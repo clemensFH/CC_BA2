@@ -75,8 +75,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     packet = mqtt.MQTT(QOS=1)/mqtt.MQTTPublish(msgid=int.from_bytes(crwaler.getNextBytes(2), "big"), topic=crwaler.getNextBytes(14), value=crwaler.getRemainingBytes())
     s.send(bytes(packet))
     print("FINISHED sending packets")
-    print("Last packet sent: ")
-    packet.show()
+#    print("Last packet sent: ")
+#    packet.show()
     packet_counter += 1
     print("Length of last packet: " + str(len(packet)))
 

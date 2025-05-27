@@ -33,7 +33,7 @@ else:
 # TCP-Socket einrichten
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server:
     server.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 20 * 1024 * 1024)
-    server.settimeout(2.0)
+#    server.settimeout(2.0)
     server.bind((HOST, PORT))
     print(f"CoAP-Receiver running on port {PORT}")
     tmp = b""
@@ -100,7 +100,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server:
     print("Packet Count           : " + str(packet_counter))
     print(f"Packet reception time  : {end_recv - start_time:.6f} sec")
     print(f"Reassembling time      : {end_time - end_recv:.6f} sec")
-    print(f"Total                  : {start_time - end_time:.6f} sec")
+    print(f"Total                  : {end_time - start_time:.6f} sec")
     
     """print(hsh)
     if hsh == "56939f07f300cd31e9c462f5893b1abb50bf5e79d100806e41ea47a3093a01db" or hsh == "0e1609970222da6f2b895886911591a057c70717b201863b9600f0b7ec339de3":
