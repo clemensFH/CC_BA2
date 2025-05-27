@@ -29,7 +29,7 @@ except ValueError:
     sys.exit(1)
 
 SERVER_IP = args.Target
-PSIZE = 1453
+PSIZE = 1455
 
 print("\n====================MQTT EXFILTRATION====================\n")
 
