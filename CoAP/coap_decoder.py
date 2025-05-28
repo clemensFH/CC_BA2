@@ -6,7 +6,10 @@ from hashlib import sha256
 import time, argparse, sys
 
 
-HASHES = ["56939f07f300cd31e9c462f5893b1abb50bf5e79d100806e41ea47a3093a01db" , "0e1609970222da6f2b895886911591a057c70717b201863b9600f0b7ec339de3", "15408d910a9c5955f17c9ba255f64f972f3f3252737b51a852f513cc4b82f96c"]
+HASHES = ["56939f07f300cd31e9c462f5893b1abb50bf5e79d100806e41ea47a3093a01db",
+          "0e1609970222da6f2b895886911591a057c70717b201863b9600f0b7ec339de3",
+          "15408d910a9c5955f17c9ba255f64f972f3f3252737b51a852f513cc4b82f96c",
+          "e8ccb1a7054431eb8aaa48e3cbe7a76dde439e1fad47c0a762f4f26bbfa52b7c"]
 
 # Server-Konfiguration
 HOST = '0.0.0.0'      # Lauscht auf allen Interfaces
@@ -14,7 +17,7 @@ PORT = 5683           # MQTT-Standardport
 PSIZE = 1472
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-l", "--Length", type=int, help = "Length of expected exfiltratino data (1, 5, 10 MB)")
+parser.add_argument("-l", "--Length", type=int, help = "Length of expected exfiltratino data (500 KB, 1, 5, 10 MB)")
 args = parser.parse_args()
 
 size = int(args.Length)
@@ -24,6 +27,8 @@ elif size == 5:
     exceptedPackets = 3142
 elif size == 10:
     exceptedPackets = 6284
+elif size == 500:
+    exceptedPackets = 307
 else:
     print("Invalid exfiltration size!")
     sys.exit(1)

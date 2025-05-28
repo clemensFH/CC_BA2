@@ -9,7 +9,7 @@ from hashlib import sha256
 
 print("Read target content")
 
-content = cborctl.readFromFile("data_1mb.json")
+content = cborctl.readFromFile("data_500kb.json")
 print(len(content))
 print(sha256(content).hexdigest())
 

@@ -33,7 +33,7 @@ def getMessageStr(data: str):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-l", "--Length", type=int, help = "Length of data to exfiltrate (1, 5, 10 MB)")
+parser.add_argument("-l", "--Length", type=int, help = "Length of data to exfiltrate (500 KB, 1, 5, 10 MB)")
 parser.add_argument("-s", "--Segment", action="store_true", help = "Segement packets into Ethernet MTU sizes")
 parser.add_argument("-t", "--Target", help = "IP address of server to send exfiltration data to")
 args = parser.parse_args()
@@ -43,7 +43,7 @@ if args.Segment == True: SEG = True
 
 size = int(args.Length)
 print(size)
-if size not in [1,5,10]:
+if size not in [1,5,10,500]:
     print("Invalid exfiltration size!")
     sys.exit(1)
 
@@ -62,7 +62,10 @@ print("\n====================XMPP EXFILTRATION====================\n")
 info = "ON" if SEG else "OFF"
 print(f"Exfiltrating {size} MB with Segementing {info}")
 
-content = readFromFile(f"data_{size}mb.json")    # bytes von CBOR speichern
+if size == 500:
+    content = readFromFile("data_05mb.json")
+else:
+    content = readFromFile(f"data_{size}mb.json")
 print("Hash of CBOR-encoded content:\n" + sha256(content).hexdigest() + " (Check at receiver!)")
 
 b64content = base64.b64encode(content).decode()
