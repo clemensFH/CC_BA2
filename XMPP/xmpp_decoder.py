@@ -21,6 +21,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-s", "--Segment", action="store_true", help = "Segement packets into Ethernet MTU sizes")
 args = parser.parse_args()
 
+# SEG
+#   -> True: Packetgröße auf MTU limitieren
+#   -> False: Beliebige Packetgröße (ein Packet mit vollständigem Payload)
 SEG = False
 if args.Segment == True: SEG = True
 info = "ON" if SEG else "OFF"
@@ -32,15 +35,15 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
     print(f"XMPP-Receiver running on port {PORT}...")
     print(f"with segmenting {info}")
 
-    conn, addr = server.accept() # Auf Verbindung warten | conn -> client socket, addr -> client adress + port
-    with conn:                  # Solange Verbindung besteht
+    conn, addr = server.accept() # Auf Verbindung warten
+    with conn:                   # Solange Verbindung besteht
         print(f"RECEIVING data from {addr}")
         print("...")
         
         content = b""
         start_time = -1.0
         while True:
-            data = conn.recv(1024)   # empfange MAX bytes
+            data = conn.recv(1024)   # Daten empfangen
             if not data:
                 break
             if start_time < 0.0: start_time = time.perf_counter()
@@ -49,16 +52,15 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         end_recv = time.perf_counter()
         print("FINISHED receiving data")
         print("reassembling payload ...")
+
         length = len(content)
-#        print("Content Len:" + str(length))
         idx = 0
         payload = b""
         b64payload = ""
         packet_counter = 0
 
-        while idx + PSIZE <= length and SEG:
-            xml_str = content[idx:idx+PSIZE].decode("utf-8")
-#            print(xml_str)
+        while idx + PSIZE <= length and SEG:                    # Payload aufteilen
+            xml_str = content[idx:idx+PSIZE].decode("utf-8")    # XML content auslesen
 
             try:
             # XML in ElementTree-Objekt umwandeln
@@ -80,7 +82,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
                  print("Fehler beim Parsen:", e)
                  continue
 
-        xml_str = content[idx:].decode("utf-8")
+        xml_str = content[idx:].decode("utf-8")                 # restliche bytes
         #print(xml_str)
         try:
             root=ET.fromstring(xml_str)

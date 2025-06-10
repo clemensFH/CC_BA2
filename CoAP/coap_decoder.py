@@ -41,57 +41,50 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server:
 #    server.settimeout(2.0)
     server.bind((HOST, PORT))
     print(f"CoAP-Receiver running on port {PORT}")
+
     tmp = b""
     payload = b""
     i = 0
     start_time = 0.0
-    while True:
+    while True:     # Daten empfangen
         data, addr = server.recvfrom(4096)
         if i == 0:
             print(f"RECEIVING data from {addr}")
             print("...")
             start_time = time.perf_counter()
-#        coap = CoAP(data)  # 'data' stammt aus recvfrom
         i += 1
 
-#        print(str(i))
         payload += data
         if i == exceptedPackets: break
-#        if i == 629: break # 631
-#        if i == 3142: break # 3151
-#        if i == 6284: break # 6301
 
     length = len(payload)
-#    print("i: " + str(i) + " len: " + str(len(payload)))
     end_recv = time.perf_counter()
     print("FINISHED receiving data")
     print("reassembling payload ...")
 
     idx = 0
     packet_counter = 0
-    while idx + PSIZE <= length:
+    while idx + PSIZE <= length:        # gesammelten Payload aufteilen und zu CoAP Packeten bauen
         x = CoAP(payload[idx:idx + PSIZE])
  #       x.show()
         packet_counter += 1
         tmp += x.msg_id.to_bytes(2, 'big')
         tmp += x.token
-#        if x.code == 1:
         for opt in x.options:
             tmp += opt[1]
-        if x.code == 2:     # Bei Publish Packets
+        if x.code == 2:
             tmp += x.load
 
         idx += PSIZE
     
-    x = CoAP(payload[idx:])
+    x = CoAP(payload[idx:])     # restlichen bytes zusammenbauen
 #    x.show()
     packet_counter += 1
     tmp += x.msg_id.to_bytes(2, 'big')
     tmp += x.token
-#    if x.code == 1:
     for opt in x.options:
         tmp += opt[1]
-    if x.code == 2:     # Bei Publish Packets
+    if x.code == 2:
         tmp += x.load
 
     end_time = time.perf_counter()
@@ -105,9 +98,4 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server:
     print("Packet Count           : " + str(packet_counter))
     print(f"Packet reception time  : {end_recv - start_time:.6f} sec")
     print(f"Reassembling time      : {end_time - end_recv:.6f} sec")
-    print(f"Total                  : {end_time - start_time:.6f} sec")
-    
-    """print(hsh)
-    if hsh == "56939f07f300cd31e9c462f5893b1abb50bf5e79d100806e41ea47a3093a01db" or hsh == "0e1609970222da6f2b895886911591a057c70717b201863b9600f0b7ec339de3":
-        print("Packet Nr: " + str(i) + " Hash OK")"""
-               
+    print(f"Total                  : {end_time - start_time:.6f} sec")               

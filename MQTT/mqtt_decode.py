@@ -19,6 +19,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-s", "--Segment", action="store_true", help = "Segement packets into Ethernet MTU sizes")
 args = parser.parse_args()
 
+# SEG
+#   -> True: Packetgröße auf MTU limitieren
+#   -> False: Beliebige Packetgröße (ein Packet mit vollständigem Payload)
 SEG = False
 if args.Segment == True: SEG = True
 info = "ON" if SEG else "OFF"
@@ -31,41 +34,37 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
     print(f"with segmenting {info}")
 
     conn, addr = server.accept()
-    with conn:
+    with conn:          # Auf Verbindung warten
         print(f"RECEIVING data from {addr}")
         print("...")
+
         content = b""
         packet_counter = 0
         start_time = -1.0
-        while True:
+        while True:     # Daten empfangen
             data = conn.recv(1024)
             if not data:
                 break
             if start_time < 0.0: start_time = time.perf_counter()
             content += data
 
-            #if mqtt_packet.type == 3:
-            #    tmp += mqtt_packet.topic
-            #    tmp += mqtt_packet.value
-            #    print("Reassembled: " + tmp.hex())
         end_recv = time.perf_counter()
         print("FINISHED receiving data")
         print("reassembling payload ...")
+
         length = len(content)
         idx = 0
         payload = b""
-        while idx + PSIZE <= length and SEG:
-            x = MQTT(content[idx:idx + PSIZE])
+        while idx + PSIZE <= length and SEG:    # Payload aufteilen
+            x = MQTT(content[idx:idx + PSIZE])  # MQTT Packet erstellen
 #            x.show()
             packet_counter += 1
             payload += x.msgid.to_bytes(2, 'big')
             payload += x.topic + x.value
             idx += PSIZE
 
-        #print("Länge: " + str(len(content)))
-        if len(content[idx:]) != 0:
+        if len(content[idx:]) != 0:             # Übrige bytes zusammenbauen
             x = MQTT(content[idx:])
-#            print("Rem Length: " + str(len(content[idx:])))
 #            x.summary()
             packet_counter += 1
             payload += x.msgid.to_bytes(2, 'big')

